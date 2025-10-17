@@ -181,7 +181,23 @@ class PromptServer():
         self.client_session:Optional[aiohttp.ClientSession] = None
         self.number = 0
 
+        # Bagel middleware imports
+        self.bagel_middleware_available = False
+        try:
+            from custom_nodes.bagel.bagel_auth_middleware import bagel_auth_middleware
+            from custom_nodes.bagel.save_api_key_middleware import api_key_middleware
+            self.bagel_middleware_available = True
+            logging.info("[Bagel] Middleware loaded successfully")
+        except ImportError as e:
+            logging.warning(f"[Bagel] Middleware not available: {e}")
+
         middlewares = [cache_control, deprecation_warning]
+
+        # Add Bagel auth middleware FIRST (before compression)
+        if self.bagel_middleware_available:
+            middlewares.append(bagel_auth_middleware)
+            middlewares.append(api_key_middleware)
+
         if args.enable_compress_response_body:
             middlewares.append(compress_body)
 
@@ -820,6 +836,15 @@ class PromptServer():
         self.model_file_manager.add_routes(self.routes)
         self.custom_node_manager.add_routes(self.routes, self.app, nodes.LOADED_MODULE_DIRS.items())
         self.app.add_subapp('/internal', self.internal_routes.get_app())
+
+        # Register Bagel API routes
+        if self.bagel_middleware_available:
+            try:
+                from custom_nodes.bagel.bagel_api_routes import register_routes as register_bagel_routes
+                register_bagel_routes(self.app)
+                logging.info("[Bagel] API routes registered")
+            except Exception as e:
+                logging.error(f"[Bagel] Failed to register routes: {e}")
 
         # Prefix every route with /api for easier matching for delegation.
         # This is very useful for frontend dev server, which need to forward
