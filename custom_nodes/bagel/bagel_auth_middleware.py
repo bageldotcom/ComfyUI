@@ -113,7 +113,35 @@ async def bagel_auth_middleware(request, handler):
         request.path.startswith('/bagel/')):
         return await handler(request)
 
-    # PRIORITY 1: Check session cookie (normal users with API key)
+    # PRIORITY 1: Check bagel_session query parameter (localhost cross-port auth)
+    session_param = request.query.get('bagel_session')
+    if session_param:
+        session_data = validate_session_cookie(session_param)
+        if session_data:
+            new_headers = dict(request.headers)
+            new_headers['X-Comfy-User'] = session_data['comfy_user_id']
+            new_headers['X-Bagel-Api-Key'] = session_data['api_key']
+            request = request.clone(headers=new_headers)
+
+            logger.info(f"[Bagel Auth] Authenticated via URL param: {session_data['username']} ({session_data['comfy_user_id']})")
+
+            # Handle the request
+            response = await handler(request)
+
+            # Set cookie for subsequent requests (so user doesn't need param on every request)
+            response.set_cookie(
+                'bagel_session',
+                session_param,
+                domain=None,
+                httponly=True,
+                secure=False,
+                samesite='lax',
+                max_age=3600
+            )
+
+            return response
+
+    # PRIORITY 2: Check session cookie (normal users with API key)
     session_cookie = request.cookies.get('bagel_session')
     if session_cookie:
         session_data = validate_session_cookie(session_cookie)
