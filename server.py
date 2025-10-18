@@ -185,7 +185,7 @@ class PromptServer():
         self.bagel_middleware_available = False
         try:
             from custom_nodes.bagel.bagel_auth_middleware import bagel_auth_middleware
-            from custom_nodes.bagel.save_api_key_middleware import api_key_middleware
+            from custom_nodes.bagel.save_api_key_middleware import save_api_key_middleware
             self.bagel_middleware_available = True
             logging.info("[Bagel] Middleware loaded successfully")
         except ImportError as e:
@@ -196,7 +196,7 @@ class PromptServer():
         # Add Bagel auth middleware FIRST (before compression)
         if self.bagel_middleware_available:
             middlewares.append(bagel_auth_middleware)
-            middlewares.append(api_key_middleware)
+            middlewares.append(save_api_key_middleware)
 
         if args.enable_compress_response_body:
             middlewares.append(compress_body)
