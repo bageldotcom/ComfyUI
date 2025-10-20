@@ -38,8 +38,8 @@ async def handle_get_current_user(request):
     """
     try:
         # Get user from auth middleware headers
-        comfy_user_id = request.headers.get('X-Comfy-User')
-        api_key = request.headers.get('X-Bagel-Api-Key')
+        comfy_user_id = request.headers.get('comfy-user')
+        api_key = request.headers.get('bagel-api-key')
 
         if not comfy_user_id:
             return web.json_response(

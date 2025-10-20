@@ -2,8 +2,8 @@
 ComfyUI Middleware - Save API keys per user to disk.
 
 This middleware intercepts HTTP requests to capture and store Bagel API keys
-per user for multi-user deployments. It reads the X-Comfy-User and X-Bagel-Api-Key
-headers injected by nginx and saves them ENCRYPTED to disk.
+per user for multi-user deployments. It reads the comfy-user and bagel-api-key
+headers injected by auth middleware and saves them ENCRYPTED to disk.
 
 Saved to: ~/user_data/{user_id}/bagel_api_key.enc
 """
@@ -97,13 +97,13 @@ async def save_api_key_middleware(request, handler):
     Save user's API key to their directory on first request.
 
     This middleware runs on EVERY request to ComfyUI. It checks if the request
-    has X-Comfy-User and X-Bagel-Api-Key headers (injected by nginx after session
+    has comfy-user and bagel-api-key headers (injected by auth middleware after session
     validation), and if so, saves the API key ENCRYPTED to disk.
 
     The saved key is then used by custom nodes via get_api_key_for_user().
     """
-    comfy_user = request.headers.get("X-Comfy-User")
-    api_key = request.headers.get("X-Bagel-Api-Key")
+    comfy_user = request.headers.get("comfy-user")
+    api_key = request.headers.get("bagel-api-key")
 
     if comfy_user and api_key and cipher:
         user_data_dir = Path.home() / "user_data" / comfy_user
@@ -158,7 +158,7 @@ async def save_api_key_middleware(request, handler):
         request = request.clone(headers=new_headers)
 
     elif comfy_user and api_key and not cipher:
-        logger.warning("[Bagel] X-Bagel-Api-Key header present but COMFY_SESSION_KEY not set - cannot encrypt!")
+        logger.warning("[Bagel] bagel-api-key header present but COMFY_SESSION_KEY not set - cannot encrypt!")
 
     response = await handler(request)
 

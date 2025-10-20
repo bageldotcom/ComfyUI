@@ -119,8 +119,8 @@ async def bagel_auth_middleware(request, handler):
         session_data = validate_session_cookie(session_param)
         if session_data:
             new_headers = dict(request.headers)
-            new_headers['X-Comfy-User'] = session_data['comfy_user_id']
-            new_headers['X-Bagel-Api-Key'] = session_data['api_key']
+            new_headers['comfy-user'] = session_data['comfy_user_id']
+            new_headers['bagel-api-key'] = session_data['api_key']
             request = request.clone(headers=new_headers)
 
             logger.info(f"[Bagel Auth] Authenticated via URL param: {session_data['username']} ({session_data['comfy_user_id']})")
@@ -147,8 +147,8 @@ async def bagel_auth_middleware(request, handler):
         session_data = validate_session_cookie(session_cookie)
         if session_data:
             new_headers = dict(request.headers)
-            new_headers['X-Comfy-User'] = session_data['comfy_user_id']
-            new_headers['X-Bagel-Api-Key'] = session_data['api_key']
+            new_headers['comfy-user'] = session_data['comfy_user_id']
+            new_headers['bagel-api-key'] = session_data['api_key']
             request = request.clone(headers=new_headers)
 
             logger.info(f"[Bagel Auth] Authenticated: {session_data['username']} ({session_data['comfy_user_id']})")
@@ -159,7 +159,7 @@ async def bagel_auth_middleware(request, handler):
     if dev_session_cookie == 'dev-mode-active':
         dev_user_id = "dev-mode-anonymous"
         new_headers = dict(request.headers)
-        new_headers['X-Comfy-User'] = dev_user_id
+        new_headers['comfy-user'] = dev_user_id
         request = request.clone(headers=new_headers)
 
         logger.info(f"[Bagel Auth] Authenticated via dev_session: {dev_user_id}")
@@ -174,7 +174,7 @@ async def bagel_auth_middleware(request, handler):
             logger.info(f"[Bagel Auth] ✅ Developer mode activated: {dev_user_id}")
 
             new_headers = dict(request.headers)
-            new_headers['X-Comfy-User'] = dev_user_id
+            new_headers['comfy-user'] = dev_user_id
             request = request.clone(headers=new_headers)
 
             # Handle the request
