@@ -13,6 +13,21 @@ from .save_api_key_middleware import get_api_key_for_user
 logger = logging.getLogger(__name__)
 
 
+async def handle_get_config(request):
+    """
+    API endpoint: GET /bagel/config
+
+    Returns frontend configuration (URLs, etc.)
+    """
+    frontend_url = os.getenv("BAGEL_FRONTEND_URL", "https://app.bagel.com")
+    backend_url = os.getenv("BAGEL_BACKEND_URL", "https://api.bagel.com")
+
+    return web.json_response({
+        "frontend_url": frontend_url,
+        "backend_url": backend_url
+    })
+
+
 async def handle_get_api_key(request):
     """
     API endpoint: GET /bagel/api_key/{user_id}
@@ -122,9 +137,10 @@ def register_routes(app):
     Called by ComfyUI after server initialization.
     """
     try:
+        app.router.add_get("/bagel/config", handle_get_config)
         app.router.add_get("/bagel/api_key/{user_id}", handle_get_api_key)
         app.router.add_get("/bagel/current_user", handle_get_current_user)
-        logger.info("[Bagel] Registered API endpoints: /bagel/api_key, /bagel/current_user")
+        logger.info("[Bagel] Registered API endpoints: /bagel/config, /bagel/api_key, /bagel/current_user")
     except Exception as e:
         logger.error(f"[Bagel] Failed to register API routes: {e}")
 
