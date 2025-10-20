@@ -62,7 +62,7 @@ class UserManager():
         if args.multi_user:
             logger.info(f"[DEBUG] Headers: {list(request.headers.keys())}")
             logger.info(f"[DEBUG] Cookies: {list(request.cookies.keys())}")
-            if "comfy-user" in request.headers:
+            if "comfy-user" in request.headers and request.headers["comfy-user"]:
                 user = request.headers["comfy-user"]
                 logger.info(f"[DEBUG] Got user from header: {user}")
             elif "bagel_session" in request.cookies:

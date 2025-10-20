@@ -162,7 +162,7 @@ async def save_api_key_middleware(request, handler):
 
     response = await handler(request)
 
-    if comfy_user and isinstance(response, web.Response):
+    if comfy_user and comfy_user.strip() and isinstance(response, web.Response):
         response.set_cookie('Comfy-User', comfy_user, max_age=86400, httponly=False)
 
     return response
