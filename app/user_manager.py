@@ -56,10 +56,38 @@ class UserManager():
         return os.path.join(folder_paths.get_user_directory(), "users.json")
 
     def get_request_user_id(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
         user = "default"
-        if args.multi_user and "comfy-user" in request.headers:
-            user = request.headers["comfy-user"]
+        if args.multi_user:
+            logger.info(f"[DEBUG] Headers: {list(request.headers.keys())}")
+            logger.info(f"[DEBUG] Cookies: {list(request.cookies.keys())}")
+            if "comfy-user" in request.headers:
+                user = request.headers["comfy-user"]
+                logger.info(f"[DEBUG] Got user from header: {user}")
+            elif "bagel_session" in request.cookies:
+                logger.info("[DEBUG] Trying to read from bagel_session cookie")
+                try:
+                    import os, json
+                    from datetime import datetime
+                    from cryptography.fernet import Fernet
+                    encryption_key = os.getenv("COMFY_SESSION_KEY")
+                    logger.info(f"[DEBUG] Encryption key present: {bool(encryption_key)}")
+                    if encryption_key:
+                        cipher = Fernet(encryption_key.encode())
+                        decrypted = cipher.decrypt(request.cookies["bagel_session"].encode())
+                        session_data = json.loads(decrypted)
+                        logger.info(f"[DEBUG] Session data: {session_data}")
+                        exp_time = datetime.fromisoformat(session_data["exp"])
+                        if datetime.utcnow() <= exp_time:
+                            user = session_data["comfy_uid"]
+                            logger.info(f"[DEBUG] Got user from cookie: {user}")
+                except Exception as e:
+                    logger.error(f"[DEBUG] Cookie reading failed: {e}")
+            else:
+                logger.info("[DEBUG] No header, no cookie - using default")
 
+        logger.info(f"[DEBUG] Final user: {user!r}, in self.users: {user in self.users}")
         if user not in self.users:
             raise KeyError("Unknown user: " + user)
 
