@@ -82,15 +82,20 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f'{backend_url}/api/v1/users/me',
-                headers={'Authorization': f'Bearer {api_key}'},
+                headers={'X-API-Key': api_key},  # Fixed: use X-API-Key header
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    # Backend returns balance in dollars, convert to cents
+                    balance = data.get('balance', 0.0)
+                    referral_balance = data.get('referral_balance', 0.0)
+                    total_balance_cents = int((balance + referral_balance) * 100)
+
                     return {
                         'username': data.get('username', 'User'),
                         'email': data.get('email', ''),
-                        'credit_balance': data.get('credit_balance', 0)
+                        'credit_balance': total_balance_cents  # In cents
                     }
                 else:
                     logger.warning(f"[Bagel] Backend returned {resp.status}")
