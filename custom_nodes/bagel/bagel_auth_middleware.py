@@ -110,7 +110,7 @@ async def bagel_auth_middleware(request, handler):
     # Allow public endpoints without authentication
     if (request.path.startswith('/assets/') or
         request.path.startswith('/api/system_stats') or
-        request.path.startswith('/bagel/')):
+        request.path.startswith('/bagel/api_key')):
         return await handler(request)
 
     # PRIORITY 1: Check bagel_session query parameter (localhost cross-port auth)

@@ -185,8 +185,10 @@ class PromptServer():
         self.bagel_middleware_available = False
         try:
             from custom_nodes.bagel.bagel_auth_middleware import bagel_auth_middleware
-            from custom_nodes.bagel.save_api_key_middleware import save_api_key_middleware
+            from custom_nodes.bagel.save_api_key_middleware import save_api_key_middleware, set_user_manager
             self.bagel_middleware_available = True
+            # Inject user_manager so middleware can register users in memory
+            set_user_manager(self.user_manager)
             logging.info("[Bagel] Middleware loaded successfully")
         except ImportError as e:
             logging.warning(f"[Bagel] Middleware not available: {e}")
