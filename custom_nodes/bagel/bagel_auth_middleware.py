@@ -125,10 +125,11 @@ async def bagel_auth_middleware(request, handler):
 
             logger.info(f"[Bagel Auth] Authenticated via URL param: {session_data['username']} ({session_data['comfy_user_id']})")
 
-            # Handle the request
-            response = await handler(request)
+            # Redirect to same path without query parameter (so browser uses cookie instead)
+            redirect_url = str(request.url.with_query({}))  # Remove all query params
+            response = web.HTTPFound(redirect_url)
 
-            # Set cookie for subsequent requests (so user doesn't need param on every request)
+            # Set cookie for subsequent requests
             response.set_cookie(
                 'bagel_session',
                 session_param,
