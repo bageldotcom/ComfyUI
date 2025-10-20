@@ -81,8 +81,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'{backend_url}/api/v1/users/me',
-                headers={'X-API-Key': api_key},  # Fixed: use X-API-Key header
+                f'{backend_url}/api/v1/user?user_id={comfy_user_id}',
+                headers={'X-API-Key': api_key},
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as resp:
                 if resp.status == 200:
