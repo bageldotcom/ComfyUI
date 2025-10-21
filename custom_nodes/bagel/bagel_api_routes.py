@@ -127,8 +127,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
                     return {
                         'username': data.get('username', 'User'),
                         'email': data.get('email', ''),
-                        'credit_balance': usd_cents,  # In USD cents
-                        'photo_url': data.get('photo_url', '')
+                        'credit_balance': usd_cents,
+                        'photo_url': data.get('image', '')
                     }
                 else:
                     logger.warning(f"[Bagel] Backend returned {resp.status}")
