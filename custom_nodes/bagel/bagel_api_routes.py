@@ -130,6 +130,23 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
         }
 
 
+async def handle_userdata_stub(request):
+    """
+    Stub handler for ComfyUI userdata endpoints that Bagel doesn't use.
+    Returns empty responses to prevent 404 console errors.
+    """
+    # Check if it's a CSS file request
+    if request.path.endswith('.css'):
+        return web.Response(text='', content_type='text/css')
+
+    # Check if it's a JSON request
+    if request.path.endswith('.json') or 'dir=' in str(request.query_string):
+        return web.json_response([])
+
+    # Default: empty JSON object
+    return web.json_response({})
+
+
 def register_routes(app):
     """
     Register Bagel API routes with the aiohttp application.
@@ -140,6 +157,13 @@ def register_routes(app):
         app.router.add_get("/bagel/config", handle_get_config)
         app.router.add_get("/bagel/api_key/{user_id}", handle_get_api_key)
         app.router.add_get("/bagel/current_user", handle_get_current_user)
+
+        # Stub endpoints to prevent console errors for unused ComfyUI features
+        app.router.add_get("/api/userdata/user.css", handle_userdata_stub)
+        app.router.add_get("/user.css", handle_userdata_stub)
+        app.router.add_get("/api/userdata", handle_userdata_stub)
+        app.router.add_get("/api/userdata/{path:.*}", handle_userdata_stub)
+
         logger.info("[Bagel] Registered API endpoints: /bagel/config, /bagel/api_key, /bagel/current_user")
     except Exception as e:
         logger.error(f"[Bagel] Failed to register API routes: {e}")
