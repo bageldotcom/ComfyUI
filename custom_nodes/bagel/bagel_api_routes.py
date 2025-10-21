@@ -116,19 +116,34 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
             ) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    # Backend returns balance in Bagel credits, convert to USD cents
-                    # 25 Bagel credits = 1 USD
                     balance = data.get('balance', 0.0)
                     referral_balance = data.get('referral_balance', 0.0)
                     total_credits = balance + referral_balance
                     usd_dollars = total_credits / 25
                     usd_cents = int(usd_dollars * 100)
 
+                    image = data.get('image', '')
+                    photo_url = ''
+                    if image and not image.startswith(('http://', 'https://', 'data:')):
+                        try:
+                            async with session.get(
+                                f'{backend_url}/api/v1/user/{comfy_user_id}/image',
+                                headers={'X-API-Key': api_key},
+                                timeout=aiohttp.ClientTimeout(total=5)
+                            ) as img_resp:
+                                if img_resp.status == 200:
+                                    image_base64 = await img_resp.text()
+                                    photo_url = f'data:image/jpeg;base64,{image_base64}'
+                        except Exception as e:
+                            logger.warning(f"[Bagel] Failed to fetch image: {e}")
+                    else:
+                        photo_url = image
+
                     return {
                         'username': data.get('username', 'User'),
                         'email': data.get('email', ''),
                         'credit_balance': usd_cents,
-                        'photo_url': data.get('image', '')
+                        'photo_url': photo_url
                     }
                 else:
                     logger.warning(f"[Bagel] Backend returned {resp.status}")
