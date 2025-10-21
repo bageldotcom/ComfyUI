@@ -83,7 +83,8 @@ async def handle_get_current_user(request):
             "username": user_data.get('username', 'User'),
             "email": user_data.get('email', ''),
             "api_key": api_key,
-            "creditBalance": user_data.get('credit_balance', 0)  # In cents
+            "creditBalance": user_data.get('credit_balance', 0),  # In cents
+            "photo_url": user_data.get('photo_url', '')
         })
     except Exception as e:
         logger.error(f"[Bagel] Could not fetch current user: {e}")
@@ -126,7 +127,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
                     return {
                         'username': data.get('username', 'User'),
                         'email': data.get('email', ''),
-                        'credit_balance': usd_cents  # In USD cents
+                        'credit_balance': usd_cents,  # In USD cents
+                        'photo_url': data.get('photo_url', '')
                     }
                 else:
                     logger.warning(f"[Bagel] Backend returned {resp.status}")
@@ -134,7 +136,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
                     return {
                         'username': comfy_user_id,
                         'email': f'{comfy_user_id}@bagel.com',
-                        'credit_balance': 0
+                        'credit_balance': 0,
+                        'photo_url': ''
                     }
     except Exception as e:
         logger.error(f"[Bagel] Failed to fetch from backend: {e}")
@@ -142,7 +145,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
         return {
             'username': comfy_user_id,
             'email': f'{comfy_user_id}@bagel.com',
-            'credit_balance': 0
+            'credit_balance': 0,
+            'photo_url': ''
         }
 
 
