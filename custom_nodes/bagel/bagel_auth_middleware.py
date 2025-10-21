@@ -111,7 +111,8 @@ async def bagel_auth_middleware(request, handler):
     if (request.path.startswith('/assets/') or
         request.path.startswith('/api/system_stats') or
         request.path.startswith('/bagel/api_key') or
-        request.path.startswith('/bagel/config')):
+        request.path.startswith('/bagel/config') or
+        request.path.startswith('/bagel/current_user')):
         return await handler(request)
 
     # PRIORITY 1: Check bagel_session query parameter (localhost cross-port auth)
