@@ -14,11 +14,15 @@ VIDEO NODES:
 - BagelWanVideoNode: WAN video generation
 - BagelVideoNode: 50+ video models (Kling, Runway, Minimax, Luma, Pika, etc.)
 - SaveVideo: Save video to disk utility
+
+API MODULES:
+- bagel_model_downloader: Server-side model downloads (NEW)
 """
 
 # Import middleware and user management (loads automatically, no nodes registered)
 from . import user_manager
 from . import save_api_key_middleware
+from . import bagel_model_downloader  # NEW - registers API routes
 
 # Import image nodes
 from .bagel_paris_node import NODE_CLASS_MAPPINGS as PARIS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS as PARIS_DISPLAY

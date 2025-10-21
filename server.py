@@ -843,7 +843,7 @@ class PromptServer():
         if self.bagel_middleware_available:
             try:
                 from custom_nodes.bagel.bagel_api_routes import register_routes as register_bagel_routes
-                register_bagel_routes(self.app)
+                register_bagel_routes(self.app, prompt_server=self)
                 logging.info("[Bagel] API routes registered")
             except Exception as e:
                 logging.error(f"[Bagel] Failed to register routes: {e}")

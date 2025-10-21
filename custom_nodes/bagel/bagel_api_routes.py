@@ -9,6 +9,7 @@ import logging
 import aiohttp
 from aiohttp import web
 from .save_api_key_middleware import get_api_key_for_user
+from .bagel_model_downloader import register_download_routes  # NEW
 
 logger = logging.getLogger(__name__)
 
@@ -102,15 +103,18 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
             ) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    # Backend returns balance in dollars, convert to cents
+                    # Backend returns balance in Bagel credits, convert to USD cents
+                    # 25 Bagel credits = 1 USD
                     balance = data.get('balance', 0.0)
                     referral_balance = data.get('referral_balance', 0.0)
-                    total_balance_cents = int((balance + referral_balance) * 100)
+                    total_credits = balance + referral_balance
+                    usd_dollars = total_credits / 25
+                    usd_cents = int(usd_dollars * 100)
 
                     return {
                         'username': data.get('username', 'User'),
                         'email': data.get('email', ''),
-                        'credit_balance': total_balance_cents  # In cents
+                        'credit_balance': usd_cents  # In USD cents
                     }
                 else:
                     logger.warning(f"[Bagel] Backend returned {resp.status}")
@@ -147,7 +151,7 @@ async def handle_userdata_stub(request):
     return web.json_response({})
 
 
-def register_routes(app):
+def register_routes(app, prompt_server=None):  # MODIFIED: Added prompt_server param
     """
     Register Bagel API routes with the aiohttp application.
 
@@ -165,6 +169,13 @@ def register_routes(app):
         app.router.add_get("/api/userdata/{path:.*}", handle_userdata_stub)
 
         logger.info("[Bagel] Registered API endpoints: /bagel/config, /bagel/api_key, /bagel/current_user")
+
+        # NEW: Register model download routes
+        if prompt_server:
+            register_download_routes(app, prompt_server)
+        else:
+            logger.warning("[Bagel] Prompt server not provided, model download routes not registered")
+
     except Exception as e:
         logger.error(f"[Bagel] Failed to register API routes: {e}")
 
