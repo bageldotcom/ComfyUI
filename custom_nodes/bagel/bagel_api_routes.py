@@ -52,19 +52,21 @@ async def handle_get_current_user(request):
 
     Returns the current user's Bagel profile data for frontend sync.
     This endpoint is whitelisted (public) so it validates cookies directly.
+    Supports both cookie and query parameter authentication.
     """
     try:
         # Get user from auth middleware headers (if middleware ran)
         comfy_user_id = request.headers.get('comfy-user')
         api_key = request.headers.get('bagel-api-key')
 
-        # Fallback: validate cookie directly (when endpoint is whitelisted)
+        # Fallback: validate cookie or query parameter directly (when endpoint is whitelisted)
         if not comfy_user_id:
             from .bagel_auth_middleware import validate_session_cookie
 
-            session_cookie = request.cookies.get('bagel_session')
-            if session_cookie:
-                session_data = validate_session_cookie(session_cookie)
+            # Check cookie first, then query parameter
+            session_token = request.cookies.get('bagel_session') or request.query.get('bagel_session')
+            if session_token:
+                session_data = validate_session_cookie(session_token)
                 if session_data:
                     comfy_user_id = session_data['comfy_user_id']
                     api_key = session_data['api_key']

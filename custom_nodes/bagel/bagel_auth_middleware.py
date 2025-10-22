@@ -129,12 +129,13 @@ async def bagel_auth_middleware(request, handler):
 
             response = await handler(request)
 
+            # Set cookie for future requests (works for same-domain scenarios)
             response.set_cookie(
                 'bagel_session',
                 session_param,
                 domain=None,
                 httponly=True,
-                secure=False,
+                secure=request.url.scheme == 'https',
                 samesite='lax',
                 max_age=3600
             )
@@ -184,9 +185,9 @@ async def bagel_auth_middleware(request, handler):
             response.set_cookie(
                 'dev_session',
                 'dev-mode-active',
-                domain=None,  # localhost
+                domain=None,
                 httponly=True,
-                secure=False,  # localhost doesn't use HTTPS
+                secure=request.url.scheme == 'https',
                 samesite='lax',
                 max_age=3600  # 1 hour
             )
