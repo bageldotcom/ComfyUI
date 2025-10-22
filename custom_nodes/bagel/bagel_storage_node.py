@@ -1,5 +1,6 @@
 import os
-import requests
+import aiohttp
+import asyncio
 import io
 import logging
 from pathlib import Path
@@ -52,9 +53,9 @@ class BagelStorageNode:
     FUNCTION = "upload"
     CATEGORY = "bagel"
 
-    def upload(self, image, user_id, filename_prefix):
+    async def upload(self, image, user_id, filename_prefix):
         """
-        Upload image tensor to S3 via Bagel backend HTTP API, return URL
+        Upload image tensor to S3 via Bagel backend HTTP API, return URL (async, non-blocking)
         """
         # Get API key (multi-user or self-hosted)
         api_key = get_api_key_for_user()
@@ -82,46 +83,38 @@ class BagelStorageNode:
         filename = f"{filename_prefix}_{timestamp}_{unique_id}.png"
 
         try:
-            # Upload to S3 via Bagel backend API
-            files = {
-                'file': (filename, buffer.getvalue(), 'image/png')
-            }
-            data = {
-                'user_id': user_id,
-                'prefix': f"comfyui_outputs/{user_id}"
-            }
+            # Upload to S3 via Bagel backend API (async, non-blocking)
+            # Prepare multipart form data
+            form_data = aiohttp.FormData()
+            form_data.add_field('file', buffer.getvalue(), filename=filename, content_type='image/png')
+            form_data.add_field('user_id', user_id)
+            form_data.add_field('prefix', f"comfyui_outputs/{user_id}")
 
             # Prepare headers with required API key
             headers = {
                 "Authorization": f"Bearer {api_key}"
             }
 
-            response = requests.post(
-                f"{BAGEL_BACKEND_URL}/v1/storage/upload",
-                files=files,
-                data=data,
-                headers=headers,
-                timeout=60  # 1 minute timeout for upload
-            )
-            response.raise_for_status()
-
-            # Parse response
-            result = response.json()
-            url = result["url"]
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{BAGEL_BACKEND_URL}/v1/storage/upload",
+                    data=form_data,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=60)  # 1 minute timeout
+                ) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    url = result["url"]
 
             return (url,)
 
-        except requests.exceptions.Timeout:
+        except asyncio.TimeoutError:
             raise Exception(
                 f"Bagel backend timeout after 60s. Check if backend is running at {BAGEL_BACKEND_URL}"
             )
-        except requests.exceptions.ConnectionError:
+        except aiohttp.ClientError as e:
             raise Exception(
-                f"Cannot connect to Bagel backend at {BAGEL_BACKEND_URL}. Is the service running?"
-            )
-        except requests.exceptions.HTTPError as e:
-            raise Exception(
-                f"Bagel API error {e.response.status_code}: {e.response.text}"
+                f"Connection/API error: {e}"
             )
         except Exception as e:
             raise Exception(f"Image upload failed: {str(e)}")

@@ -1,5 +1,6 @@
 import os
-import requests
+import aiohttp
+import asyncio
 import io
 import logging
 from pathlib import Path
@@ -19,7 +20,9 @@ try:
 except ImportError:
     # Fallback for self-hosted installations
     logging.info(f"[BagelParisNode] Self-hosted mode (no middleware)")
-    def get_api_key_for_user(user_id=None):
+    def get_api_key_for_user(user_id=None, provided_key=None):
+        if provided_key:
+            return provided_key
         api_key = os.getenv("BAGEL_API_KEY")
         if not api_key:
             api_key_file = Path.home() / "bagel_api_key.txt"
@@ -59,23 +62,21 @@ class BagelParisNode:
     FUNCTION = "generate"
     CATEGORY = "bagel"
 
-    def generate(self, prompt, width, height, num_inference_steps, cfg_scale, seed, user_id, api_key=""):
+    async def generate(self, prompt, width, height, num_inference_steps, cfg_scale, seed, user_id, api_key=""):
         """
-        Generate image using Paris model via Bagel backend HTTP API
+        Generate image using Paris model via Bagel backend HTTP API (async, non-blocking)
         """
         # Get API key with 4-tier fallback (provided > encrypted user file > env > global file)
         api_key = get_api_key_for_user(user_id=user_id, provided_key=api_key)
 
-        # Build API request payload
+        # Build API request payload (unified instant API)
         payload = {
             "model": "paris-ddm-v1.0",
             "prompt": prompt,
-            "size": f"{width}x{height}",
-            "n": 1,
-            "response_format": "url",
-            "user": user_id,
-            # Additional Paris-specific parameters
-            "num_inference_steps": num_inference_steps,
+            "width": width,
+            "height": height,
+            "num_images": 1,
+            "steps": num_inference_steps,
             "guidance_scale": cfg_scale,
             "seed": seed if seed != -1 else None
         }
@@ -86,23 +87,26 @@ class BagelParisNode:
                 "Authorization": f"Bearer {api_key}"
             }
 
-            # Call Bagel backend API
-            response = requests.post(
-                f"{BAGEL_BACKEND_URL}/v1/images/generations",
-                json=payload,
-                headers=headers,
-                timeout=300  # 5 minute timeout for image generation
-            )
-            response.raise_for_status()
+            # Call Bagel backend API (async, non-blocking)
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{BAGEL_BACKEND_URL}/api/v1/instant/generations",
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=600)  # 10 minute timeout
+                ) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    image_url = result["images"][0]["url"]
 
-            # Parse response
-            result = response.json()
-            image_url = result["data"][0]["url"]
-
-            # Download image from S3 URL
-            image_response = requests.get(image_url, timeout=60)
-            image_response.raise_for_status()
-            image = Image.open(io.BytesIO(image_response.content))
+                # Download image from S3 URL (async, non-blocking)
+                async with session.get(
+                    image_url,
+                    timeout=aiohttp.ClientTimeout(total=60)
+                ) as img_response:
+                    img_response.raise_for_status()
+                    image_bytes = await img_response.read()
+                    image = Image.open(io.BytesIO(image_bytes))
 
             # Convert PIL Image to ComfyUI tensor format
             # ComfyUI expects: [batch, height, width, channels] in range [0, 1]
@@ -111,17 +115,13 @@ class BagelParisNode:
 
             return (image_tensor,)
 
-        except requests.exceptions.Timeout:
+        except asyncio.TimeoutError:
             raise Exception(
                 f"Bagel backend timeout after 300s. Check if backend is running at {BAGEL_BACKEND_URL}"
             )
-        except requests.exceptions.ConnectionError:
+        except aiohttp.ClientError as e:
             raise Exception(
-                f"Cannot connect to Bagel backend at {BAGEL_BACKEND_URL}. Is the service running?"
-            )
-        except requests.exceptions.HTTPError as e:
-            raise Exception(
-                f"Bagel API error {e.response.status_code}: {e.response.text}"
+                f"Connection/API error: {e}"
             )
         except Exception as e:
             raise Exception(f"Image generation failed: {str(e)}")
