@@ -5,13 +5,13 @@ This module provides API endpoints for the Bagel ComfyUI integration,
 registered after the server is fully initialized to avoid import order issues.
 """
 import os
-import logging
 import aiohttp
 from aiohttp import web
 from .save_api_key_middleware import get_api_key_for_user
 from .bagel_model_downloader import register_download_routes  # NEW
+from .bagel_logging_config import get_bagel_logger
 
-logger = logging.getLogger(__name__)
+logger = get_bagel_logger("bagel.api_routes")
 
 
 async def handle_get_config(request):
@@ -118,9 +118,7 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
             ) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    balance = data.get('balance', 0.0)
-                    referral_balance = data.get('referral_balance', 0.0)
-                    total_credits = balance + referral_balance
+                    total_credits = data.get('balance', 0.0)  # Already includes referral balance from backend
                     usd_dollars = total_credits / 25
                     usd_cents = int(usd_dollars * 100)
 

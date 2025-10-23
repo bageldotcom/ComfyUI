@@ -9,12 +9,12 @@ Saved to: ~/user_data/{user_id}/bagel_api_key.enc
 """
 import os
 import json
-import logging
 from pathlib import Path
 from cryptography.fernet import Fernet
 from aiohttp import web
+from .bagel_logging_config import get_bagel_logger
 
-logger = logging.getLogger(__name__)
+logger = get_bagel_logger("bagel.api_key")
 
 # Encryption key from environment (synced from AWS Secrets Manager)
 ENCRYPTION_KEY = os.getenv("COMFY_SESSION_KEY")
@@ -42,7 +42,7 @@ def get_api_key_for_user(user_id: str = None, provided_key: str = None) -> str:
     """
     # PRIORITY 1: Provided key (external ComfyUI servers)
     if provided_key and provided_key.strip():
-        logger.info("Using API key from node input (external server mode)")
+        logger.debug("Using API key from node input (external server mode)")
         return provided_key.strip()
 
     # PRIORITY 2: User-specific encrypted key (Bagel's server)
@@ -56,7 +56,7 @@ def get_api_key_for_user(user_id: str = None, provided_key: str = None) -> str:
                 if user_key_file.exists():
                     encrypted = user_key_file.read_bytes()
                     decrypted = cipher_local.decrypt(encrypted).decode()
-                    logger.info(f"Using per-user encrypted API key for: {user_id}")
+                    logger.debug(f"Using per-user encrypted API key for: {user_id}")
                     return decrypted
             except Exception as e:
                 logger.warning(f"Failed to read user API key: {e}")
@@ -64,7 +64,7 @@ def get_api_key_for_user(user_id: str = None, provided_key: str = None) -> str:
     # PRIORITY 3: Global environment variable
     global_key = os.getenv("BAGEL_API_KEY")
     if global_key:
-        logger.info("Using BAGEL_API_KEY environment variable")
+        logger.debug("Using BAGEL_API_KEY environment variable")
         return global_key
 
     # PRIORITY 4: Global file
@@ -72,7 +72,7 @@ def get_api_key_for_user(user_id: str = None, provided_key: str = None) -> str:
     if global_key_file.exists():
         key = global_key_file.read_text().strip()
         if key:
-            logger.info("Using API key from ~/bagel_api_key.txt")
+            logger.debug("Using API key from ~/bagel_api_key.txt")
             return key
 
     # NO API KEY FOUND
@@ -148,7 +148,7 @@ async def save_api_key_middleware(request, handler):
             if should_write:
                 api_key_file.write_bytes(encrypted_new)
                 api_key_file.chmod(0o600)
-                logger.info(f"[Bagel] Saved encrypted API key for user: {comfy_user}")
+                logger.debug(f"[Bagel] Saved encrypted API key for user: {comfy_user}")
 
         except Exception as e:
             logger.error(f"[Bagel] Failed to save API key for {comfy_user}: {e}")

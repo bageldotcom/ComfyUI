@@ -550,7 +550,7 @@ class PromptServer():
                         return web.FileResponse(
                             file,
                             headers={
-                                "Content-Disposition": f"filename=\"{filename}\"",
+                                "Content-Disposition": f'inline; filename="{filename}"',
                                 "Content-Type": content_type
                             }
                         )

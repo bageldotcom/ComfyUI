@@ -8,15 +8,15 @@ Validates two authentication methods:
 Redirects to frontend if neither is valid.
 """
 import os
-import logging
 import json
 import hmac
 import hashlib
 from datetime import datetime
 from cryptography.fernet import Fernet
 from aiohttp import web
+from .bagel_logging_config import get_bagel_logger, is_debug_enabled
 
-logger = logging.getLogger(__name__)
+logger = get_bagel_logger("bagel.auth")
 
 FRONTEND_URL = os.getenv("BAGEL_FRONTEND_URL", "https://app.bagel.com")
 ENCRYPTION_KEY = os.getenv("COMFY_SESSION_KEY")
@@ -125,7 +125,7 @@ async def bagel_auth_middleware(request, handler):
             new_headers['bagel-api-key'] = session_data['api_key']
             request = request.clone(headers=new_headers)
 
-            logger.info(f"[Bagel Auth] Authenticated via URL param: {session_data['username']} ({session_data['comfy_user_id']})")
+            logger.debug(f"[Bagel Auth] Authenticated via URL param: {session_data['username']} ({session_data['comfy_user_id']})")
 
             response = await handler(request)
 
@@ -152,7 +152,7 @@ async def bagel_auth_middleware(request, handler):
             new_headers['bagel-api-key'] = session_data['api_key']
             request = request.clone(headers=new_headers)
 
-            logger.info(f"[Bagel Auth] Authenticated: {session_data['username']} ({session_data['comfy_user_id']})")
+            logger.debug(f"[Bagel Auth] Authenticated: {session_data['username']} ({session_data['comfy_user_id']})")
             return await handler(request)
 
     # PRIORITY 1.5: Check dev_session cookie (developers, set after dev_token validation)
@@ -163,7 +163,7 @@ async def bagel_auth_middleware(request, handler):
         new_headers['comfy-user'] = dev_user_id
         request = request.clone(headers=new_headers)
 
-        logger.info(f"[Bagel Auth] Authenticated via dev_session: {dev_user_id}")
+        logger.debug(f"[Bagel Auth] Authenticated via dev_session: {dev_user_id}")
         return await handler(request)
 
     # PRIORITY 2: Check dev_token parameter
@@ -172,7 +172,7 @@ async def bagel_auth_middleware(request, handler):
         is_valid = validate_dev_token(dev_token)
         if is_valid:
             dev_user_id = "dev-mode-anonymous"
-            logger.info(f"[Bagel Auth] ✅ Developer mode activated: {dev_user_id}")
+            logger.debug(f"[Bagel Auth] Developer mode activated: {dev_user_id}")
 
             new_headers = dict(request.headers)
             new_headers['comfy-user'] = dev_user_id
@@ -194,7 +194,7 @@ async def bagel_auth_middleware(request, handler):
 
             return response
         else:
-            logger.warning("[Bagel Auth] ❌ Dev token validation failed")
+            logger.warning("[Bagel Auth] Dev token validation failed")
 
     logger.warning(f"[Bagel Auth] Blocked unauthenticated access to: {request.path}")
     return web.HTTPFound(f"{FRONTEND_URL}/comfyui")

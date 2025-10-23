@@ -1,6 +1,9 @@
 import os
 import shutil
 from datetime import datetime
+from .bagel_logging_config import get_bagel_logger
+
+logger = get_bagel_logger("bagel.save_video")
 
 class SaveVideo:
     """
@@ -53,7 +56,7 @@ class SaveVideo:
         except:
             pass  # Ignore if temp file already deleted
 
-        print(f"✅ Video saved to: {output_path}")
+        logger.debug(f"Video saved to: {output_path}")
 
         # Return results for ComfyUI UI
         return {

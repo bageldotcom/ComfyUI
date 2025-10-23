@@ -5,9 +5,9 @@ This module is automatically loaded by ComfyUI as a custom node.
 It provides a hook to capture the X-Comfy-User header set by nginx.
 """
 import os
-import logging
+from .bagel_logging_config import get_bagel_logger
 
-logger = logging.getLogger(__name__)
+logger = get_bagel_logger("bagel.user_manager")
 
 # Global variable to store the current user
 _current_user = None
@@ -32,7 +32,7 @@ def set_current_user(user_id):
     """
     global _current_user
     _current_user = user_id
-    logger.info(f"[UserManager] Current user set to: {user_id}")
+    logger.debug(f"[UserManager] Current user set to: {user_id}")
 
 
 # This module doesn't register any nodes, but ComfyUI will still load it

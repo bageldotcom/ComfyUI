@@ -2,8 +2,10 @@ import os
 import aiohttp
 import asyncio
 import io
-import logging
 from pathlib import Path
+from .bagel_logging_config import get_bagel_logger
+
+logger = get_bagel_logger("bagel.paris_node")
 from PIL import Image
 import numpy as np
 import torch
@@ -16,10 +18,10 @@ BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
 # 2. Self-hosted: API key from environment or file
 try:
     from .save_api_key_middleware import get_api_key_for_user
-    logging.info(f"[BagelParisNode] Multi-user mode enabled")
+    logger.debug(f"[BagelParisNode] Multi-user mode enabled")
 except ImportError:
     # Fallback for self-hosted installations
-    logging.info(f"[BagelParisNode] Self-hosted mode (no middleware)")
+    logger.debug(f"[BagelParisNode] Self-hosted mode (no middleware)")
     def get_api_key_for_user(user_id=None, provided_key=None):
         if provided_key:
             return provided_key
@@ -31,7 +33,7 @@ except ImportError:
         return api_key
 
 # Log backend URL on import
-logging.info(f"[BagelParisNode] Backend URL: {BAGEL_BACKEND_URL}")
+logger.debug(f"[BagelParisNode] Backend URL: {BAGEL_BACKEND_URL}")
 
 class BagelParisNode:
     """

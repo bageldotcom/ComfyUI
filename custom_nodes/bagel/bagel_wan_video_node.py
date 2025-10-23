@@ -1,9 +1,11 @@
 import os
 import aiohttp
 import asyncio
-import logging
 import tempfile
 from pathlib import Path
+from .bagel_logging_config import get_bagel_logger
+
+logger = get_bagel_logger("bagel.wan_video_node")
 
 # Configure backend URL from environment (default: localhost for self-hosted)
 BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
@@ -13,10 +15,10 @@ BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
 # 2. Self-hosted: API key from environment or file
 try:
     from .save_api_key_middleware import get_api_key_for_user
-    logging.info(f"[BagelWanVideoNode] Multi-user mode enabled")
+    logger.debug(f"[BagelWanVideoNode] Multi-user mode enabled")
 except ImportError:
     # Fallback for self-hosted installations
-    logging.info(f"[BagelWanVideoNode] Self-hosted mode (no middleware)")
+    logger.debug(f"[BagelWanVideoNode] Self-hosted mode (no middleware)")
     def get_api_key_for_user(user_id=None, provided_key=None):
         if provided_key:
             return provided_key
@@ -28,7 +30,7 @@ except ImportError:
         return api_key
 
 # Log backend URL on import
-logging.info(f"[BagelWanVideoNode] Backend URL: {BAGEL_BACKEND_URL}")
+logger.debug(f"[BagelWanVideoNode] Backend URL: {BAGEL_BACKEND_URL}")
 
 class BagelWanVideoNode:
     """

@@ -2,8 +2,10 @@ import os
 import aiohttp
 import asyncio
 import io
-import logging
 from pathlib import Path
+from .bagel_logging_config import get_bagel_logger
+
+logger = get_bagel_logger("bagel.storage_node")
 from PIL import Image
 import numpy as np
 import uuid
@@ -17,10 +19,10 @@ BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
 # 2. Self-hosted: API key from environment or file
 try:
     from .save_api_key_middleware import get_api_key_for_user
-    logging.info(f"[BagelStorageNode] Multi-user mode enabled")
+    logger.debug(f"[BagelStorageNode] Multi-user mode enabled")
 except ImportError:
     # Fallback for self-hosted installations
-    logging.info(f"[BagelStorageNode] Self-hosted mode (no middleware)")
+    logger.debug(f"[BagelStorageNode] Self-hosted mode (no middleware)")
     def get_api_key_for_user(user_id=None):
         api_key = os.getenv("BAGEL_API_KEY")
         if not api_key:
@@ -30,7 +32,7 @@ except ImportError:
         return api_key
 
 # Log backend URL on import
-logging.info(f"[BagelStorageNode] Backend URL: {BAGEL_BACKEND_URL}")
+logger.debug(f"[BagelStorageNode] Backend URL: {BAGEL_BACKEND_URL}")
 
 class BagelStorageNode:
     """

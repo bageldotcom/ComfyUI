@@ -23,7 +23,6 @@ Auto-loaded by ComfyUI as a custom node. Routes registered via bagel_api_routes.
 
 import os
 import asyncio
-import logging
 import uuid
 import time
 import hashlib
@@ -35,8 +34,9 @@ from datetime import datetime
 import aiohttp
 from aiohttp import web
 import folder_paths
+from .bagel_logging_config import get_bagel_logger
 
-logger = logging.getLogger(__name__)
+logger = get_bagel_logger("bagel.model_downloader")
 
 # Security: Only allow downloads from these sources
 ALLOWED_MODEL_SOURCES = [
@@ -193,7 +193,7 @@ class ModelDownloadManager:
 
                                 # Send update every 5%
                                 if download.progress_percent - last_progress_percent >= 5.0:
-                                    logger.info(
+                                    logger.debug(
                                         f"[Model Download] Progress: {download.filename} "
                                         f"- {download.progress_percent:.1f}% "
                                         f"({download.progress_bytes / 1024**3:.2f} / "
@@ -210,7 +210,7 @@ class ModelDownloadManager:
                     download.completed_at = datetime.utcnow().isoformat()
 
                     logger.info(
-                        f"[Model Download] ✅ Completed: {download.filename} "
+                        f"[Model Download] Completed: {download.filename} "
                         f"({download.total_bytes / 1024**3:.2f} GB) "
                         f"for user {download.user_id}"
                     )
@@ -223,7 +223,7 @@ class ModelDownloadManager:
             download.error_message = str(e)
             download.completed_at = datetime.utcnow().isoformat()
 
-            logger.error(f"[Model Download] ❌ Failed: {download.filename} - {e}")
+            logger.error(f"[Model Download] Failed: {download.filename} - {e}")
             await self.send_progress_update(download)
 
             # Clean up temp file
@@ -427,7 +427,7 @@ def register_download_routes(app: web.Application, prompt_server):
         app.router.add_get("/bagel/models/download/{download_id}/status", handle_download_status)
         app.router.add_post("/bagel/models/download/{download_id}/cancel", handle_cancel_download)
 
-        logger.info("[Bagel Model Downloader] ✅ Routes registered:")
+        logger.info("[Bagel Model Downloader] Routes registered:")
         logger.info("  POST /bagel/models/download")
         logger.info("  GET /bagel/models/download/{download_id}/status")
         logger.info("  POST /bagel/models/download/{download_id}/cancel")
