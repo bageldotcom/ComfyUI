@@ -26,6 +26,8 @@ import asyncio
 import uuid
 import time
 import hashlib
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Dict, Optional
 from dataclasses import dataclass, asdict
@@ -165,45 +167,56 @@ class ModelDownloadManager:
                             f"(max: {MAX_MODEL_SIZE_BYTES / 1024**3:.0f} GB)"
                         )
 
-                    # Download to temp file first (atomic write)
-                    temp_path = f"{download.destination_path}.tmp"
+                    # Download to local temp file (NOT on S3 mount)
+                    # S3 CSI driver doesn't support os.rename() - this works for all storage types
+                    temp_fd, temp_local_path = tempfile.mkstemp(
+                        suffix='.safetensors',
+                        prefix='comfyui_model_',
+                        dir='/tmp'
+                    )
 
                     last_progress_percent = 0.0
                     chunk_size = 1024 * 1024  # 1 MB chunks
 
-                    with open(temp_path, 'wb') as f:
-                        async for chunk in response.content.iter_chunked(chunk_size):
-                            # Check cancellation
-                            if download.cancel_requested:
-                                download.status = "cancelled"
-                                download.completed_at = datetime.utcnow().isoformat()
-                                os.remove(temp_path)
-                                logger.info(f"[Model Download] Cancelled: {download.filename}")
-                                await self.send_progress_update(download)
-                                return
-
-                            f.write(chunk)
-                            download.progress_bytes += len(chunk)
-
-                            # Calculate progress
-                            if download.total_bytes > 0:
-                                download.progress_percent = (
-                                    download.progress_bytes / download.total_bytes * 100
-                                )
-
-                                # Send update every 5%
-                                if download.progress_percent - last_progress_percent >= 5.0:
-                                    logger.debug(
-                                        f"[Model Download] Progress: {download.filename} "
-                                        f"- {download.progress_percent:.1f}% "
-                                        f"({download.progress_bytes / 1024**3:.2f} / "
-                                        f"{download.total_bytes / 1024**3:.2f} GB)"
-                                    )
-                                    last_progress_percent = download.progress_percent
+                    try:
+                        with os.fdopen(temp_fd, 'wb') as f:
+                            async for chunk in response.content.iter_chunked(chunk_size):
+                                # Check cancellation
+                                if download.cancel_requested:
+                                    download.status = "cancelled"
+                                    download.completed_at = datetime.utcnow().isoformat()
+                                    os.unlink(temp_local_path)
+                                    logger.info(f"[Model Download] Cancelled: {download.filename}")
                                     await self.send_progress_update(download)
+                                    return
 
-                    # Move temp file to final location (atomic)
-                    os.rename(temp_path, download.destination_path)
+                                f.write(chunk)
+                                download.progress_bytes += len(chunk)
+
+                                # Calculate progress
+                                if download.total_bytes > 0:
+                                    download.progress_percent = (
+                                        download.progress_bytes / download.total_bytes * 100
+                                    )
+
+                                    # Send update every 5%
+                                    if download.progress_percent - last_progress_percent >= 5.0:
+                                        logger.debug(
+                                            f"[Model Download] Progress: {download.filename} "
+                                            f"- {download.progress_percent:.1f}% "
+                                            f"({download.progress_bytes / 1024**3:.2f} / "
+                                            f"{download.total_bytes / 1024**3:.2f} GB)"
+                                        )
+                                        last_progress_percent = download.progress_percent
+                                        await self.send_progress_update(download)
+
+                        # Move complete file to final S3 location (works across filesystems)
+                        shutil.move(temp_local_path, download.destination_path)
+                    except Exception as temp_error:
+                        # Clean up temp file on error
+                        if os.path.exists(temp_local_path):
+                            os.unlink(temp_local_path)
+                        raise temp_error
 
                     download.status = "completed"
                     download.progress_percent = 100.0
