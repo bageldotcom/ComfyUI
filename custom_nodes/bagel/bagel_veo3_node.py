@@ -4,6 +4,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 from .bagel_logging_config import get_bagel_logger
+from comfy_api.latest._input_impl.video_types import VideoFromFile
 
 logger = get_bagel_logger("bagel.veo3_node")
 
@@ -90,7 +91,7 @@ class BagelVeo3Node:
         try:
             # Prepare headers with required API key
             headers = {
-                "Authorization": f"Bearer {api_key}"
+                "X-API-KEY": api_key
             }
 
             async with aiohttp.ClientSession() as session:
@@ -155,8 +156,8 @@ class BagelVeo3Node:
                             temp_file.write(video_bytes)
                             temp_file.close()
 
-                            # Return video path
-                            return (temp_file.name,)
+                            # Return VideoFromFile object (compatible with SaveVideo node)
+                            return (VideoFromFile(temp_file.name),)
 
                         elif status in ["failed", "content_filtered"]:
                             raise Exception(f"Video generation failed: {status}")

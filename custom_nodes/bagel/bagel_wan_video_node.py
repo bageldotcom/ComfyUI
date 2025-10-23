@@ -88,7 +88,7 @@ class BagelWanVideoNode:
         try:
             # Prepare headers with required API key
             headers = {
-                "Authorization": f"Bearer {api_key}"
+                "X-API-KEY": api_key
             }
 
             async with aiohttp.ClientSession() as session:

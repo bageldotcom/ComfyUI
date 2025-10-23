@@ -67,13 +67,12 @@ class BagelImageNode:
                     "bytedance/dreamina/v3.1/text-to-image",
                     "bytedance/seedream/v3/text-to-image",
                     "bytedance/seedream/v4",
-                    # WAN/Qwen
+                    # WAN/Qwen (text-to-image only)
                     "wan/v2.2-a14b/text-to-image/lora",
                     "wan/v2.2-5b/text-to-image",
-                    "wan/v2.2-a14b/image-to-image",
-                    "qwen-image", "qwen-image-edit-lora",
+                    "qwen-image",
                     # Others
-                    "hunyuan-image/v2.1", "vidu/reference-to-image",
+                    "hunyuan-image/v2.1",
                     "minimax/image-01", "janus",
                     "recraft/v2/text-to-image", "recraft/v3/text-to-image",
                     "fast-lcm-diffusion"
@@ -117,7 +116,7 @@ class BagelImageNode:
         try:
             # Prepare headers with API key (user-specific in multi-user mode)
             headers = {
-                "Authorization": f"Bearer {api_key}"
+                "X-API-KEY": api_key
             }
 
             # Call Bagel backend API (async, non-blocking)

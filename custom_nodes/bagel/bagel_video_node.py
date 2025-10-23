@@ -4,6 +4,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 from .bagel_logging_config import get_bagel_logger
+from comfy_api.latest._input_impl.video_types import VideoFromFile
 
 logger = get_bagel_logger("bagel.video_node")
 
@@ -47,15 +48,17 @@ class BagelVideoNode:
         return {
             "required": {
                 "model": ([
-                    # Kling models
+                    # Kling models (text-to-video)
                     "kling-video/v2/master/text-to-video",
                     "kling-video/v2.1/master/text-to-video",
                     "kling-video/v2.5-turbo/pro/text-to-video",
+                    # Kling models (image-to-video - requires image_url)
                     "kling-video/v2/master/image-to-video",
                     "kling-video/v2.1/master/image-to-video",
-                    # Minimax models
+                    # Minimax models (text-to-video)
                     "minimax/hailuo-02/standard/text-to-video",
                     "minimax/hailuo-02/pro/text-to-video",
+                    # Minimax models (image-to-video - requires image_url)
                     "minimax/hailuo-02/standard/image-to-video",
                     "minimax/hailuo-02/pro/image-to-video",
                     # Runway models
@@ -73,13 +76,15 @@ class BagelVideoNode:
                     # Janus models
                     "janus/pro/text-to-video",
                     "janus-pro-video/v1-text-to-video",
-                    # ByteDance models
+                    # ByteDance models (text-to-video)
                     "bytedance/i2vgen-xl-v1-text-to-video",
+                    # ByteDance models (image-to-video - requires image_url)
                     "bytedance/i2vgen-xl-v1-image-to-video",
                     "bytedance/seedance/v1-0-pro/image-to-video",
-                    # Google/WAN models
+                    # WAN models (text-to-video)
                     "wan/v2.2-5b/text-to-video",
                     "wan/v2.2-a14b/text-to-video",
+                    # WAN models (image-to-video - requires image_url)
                     "wan/v2.2-5b/image-to-video",
                     "wan/v2.2-a14b/image-to-video",
                     # Qwen models
@@ -107,7 +112,7 @@ class BagelVideoNode:
             },
             "optional": {
                 "negative_prompt": ("STRING", {"multiline": True, "default": ""}),
-                "image_url": ("STRING", {"default": ""}),
+                "image_url": ("STRING", {"default": ""}),  # Required for image-to-video models (Kling/Minimax/ByteDance/WAN i2v variants)
                 "api_key": ("STRING", {"default": "", "multiline": False})
             }
         }
@@ -149,7 +154,7 @@ class BagelVideoNode:
         try:
             # Prepare headers with required API key
             headers = {
-                "Authorization": f"Bearer {api_key}"
+                "X-API-KEY": api_key
             }
 
             async with aiohttp.ClientSession() as session:
@@ -209,13 +214,13 @@ class BagelVideoNode:
                                 video_response.raise_for_status()
                                 video_bytes = await video_response.read()
 
-                            # Save to temp file (ComfyUI expects file path for videos)
+                            # Save to temp file (ComfyUI expects VideoFromFile for videos)
                             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
                             temp_file.write(video_bytes)
                             temp_file.close()
 
-                            # Return video path
-                            return (temp_file.name,)
+                            # Return VideoFromFile object (compatible with SaveVideo node)
+                            return (VideoFromFile(temp_file.name),)
 
                         elif status in ["failed", "content_filtered"]:
                             raise Exception(f"Video generation failed: {status}")

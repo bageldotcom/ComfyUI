@@ -86,7 +86,7 @@ class BagelParisNode:
         try:
             # Prepare headers with required API key
             headers = {
-                "Authorization": f"Bearer {api_key}"
+                "X-API-KEY": api_key
             }
 
             # Call Bagel backend API (async, non-blocking)

@@ -132,6 +132,8 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
                             if img_resp.status == 200:
                                 image_base64 = await img_resp.text()
                                 if image_base64 and image_base64.strip():
+                                    # Remove JSON quotes if present (backend returns JSON string)
+                                    image_base64 = image_base64.strip().strip('"')
                                     photo_url = f'data:image/jpeg;base64,{image_base64}'
                                     logger.debug(f"[Bagel] Photo URL fetched for user {comfy_user_id}")
                                 else:
