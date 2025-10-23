@@ -131,7 +131,13 @@ async def fetch_bagel_user_data(comfy_user_id: str, api_key: str):
                         ) as img_resp:
                             if img_resp.status == 200:
                                 image_base64 = await img_resp.text()
-                                photo_url = f'data:image/jpeg;base64,{image_base64}'
+                                if image_base64 and image_base64.strip():
+                                    photo_url = f'data:image/jpeg;base64,{image_base64}'
+                                    logger.debug(f"[Bagel] Photo URL fetched for user {comfy_user_id}")
+                                else:
+                                    logger.debug(f"[Bagel] Empty photo data for user {comfy_user_id}")
+                            else:
+                                logger.debug(f"[Bagel] Photo fetch returned {img_resp.status} for user {comfy_user_id}")
                     except Exception as e:
                         logger.warning(f"[Bagel] Failed to fetch image: {e}")
 
