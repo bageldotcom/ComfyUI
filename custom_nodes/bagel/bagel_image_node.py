@@ -52,30 +52,28 @@ class BagelImageNode:
             "required": {
                 "model": ([
                     # Flux models
-                    "flux-pro", "flux-realism", "flux/dev", "flux/schnell",
+                    "flux-pro", "flux-realism", "flux/dev",
                     "flux-krea-lora", "flux-pro/v1.1", "flux-pro/v1.1-ultra",
                     "flux-krea/dev", "flux-kontext/pro", "flux-kontext/pro/max",
-                    "flux-kontext/pro/multi", "flux-kontext-lora",
+                    "flux-kontext-lora",
                     # HiDream
                     "hidream-i1-full", "hidream-i1-fast", "fal-ai/hidream-i1-dev",
                     # Stable Diffusion
-                    "stable-diffusion-v35-large", "stable-diffusion-v3-medium", "sdxl",
+                    "stable-diffusion-v35-large", "stable-diffusion-v3-medium",
                     # Google/Ideogram
                     "imagen4/preview", "ideogram/v2", "imagen4/preview/ultra",
-                    "nano-banana", "ideogram/v3/character-edit",
                     # ByteDance
                     "bytedance/dreamina/v3.1/text-to-image",
                     "bytedance/seedream/v3/text-to-image",
                     "bytedance/seedream/v4",
-                    # WAN/Qwen (text-to-image only)
+                    # WAN/Qwen
                     "wan/v2.2-a14b/text-to-image/lora",
                     "wan/v2.2-5b/text-to-image",
                     "qwen-image",
                     # Others
                     "hunyuan-image/v2.1",
                     "minimax/image-01", "janus",
-                    "recraft/v2/text-to-image", "recraft/v3/text-to-image",
-                    "fast-lcm-diffusion"
+                    "recraft/v2/text-to-image", "recraft/v3/text-to-image"
                 ], {"default": "flux-pro"}),
                 "prompt": ("STRING", {"multiline": True, "default": "a beautiful landscape"}),
                 "width": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),

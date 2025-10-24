@@ -75,7 +75,7 @@ class BagelSeeDanceNode:
 
         # Build API request payload
         payload = {
-            "model": "seedance-1-0-pro",
+            "model": "seedance",
             "prompt": prompt,
             "user": user_id,
             "duration": duration,
