@@ -210,8 +210,11 @@ class ModelDownloadManager:
                                         last_progress_percent = download.progress_percent
                                         await self.send_progress_update(download)
 
-                        # Move complete file to final S3 location (works across filesystems)
-                        shutil.move(temp_local_path, download.destination_path)
+                        # Copy complete file to final S3 location
+                        # Use copyfile instead of move/copy2 to avoid metadata preservation errors on S3
+                        shutil.copyfile(temp_local_path, download.destination_path)
+                        # Clean up temp file after successful copy
+                        os.unlink(temp_local_path)
                     except Exception as temp_error:
                         # Clean up temp file on error
                         if os.path.exists(temp_local_path):
