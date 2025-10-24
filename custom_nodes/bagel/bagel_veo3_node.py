@@ -9,7 +9,7 @@ from comfy_api.latest._input_impl.video_types import VideoFromFile
 logger = get_bagel_logger("bagel.veo3_node")
 
 # Configure backend URL from environment (default: localhost for self-hosted)
-BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
+BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088").rstrip("/")
 
 # Dual-mode API Key support:
 # 1. Multi-user (Bagel-hosted): API keys injected via X-Bagel-Api-Key header
@@ -46,8 +46,8 @@ class BagelVeo3Node:
         return {
             "required": {
                 "prompt": ("STRING", {"multiline": True, "default": "a beautiful sunset over mountains"}),
-                "duration": ("INT", {"default": 5, "min": 4, "max": 8}),
-                "aspect_ratio": (["16:9", "9:16"], {"default": "16:9"}),
+                "duration": ([8], {"default": 8}),
+                "aspect_ratio": (["16:9"], {"default": "16:9"}),
                 "generate_audio": ("BOOLEAN", {"default": True}),
                 "user_id": ("STRING", {"default": "system"})
             },
@@ -76,7 +76,7 @@ class BagelVeo3Node:
 
         # Build API request payload
         payload = {
-            "model": "veo-3",
+            "model": "veo3",
             "prompt": prompt,
             "user": user_id,
             "duration": duration,

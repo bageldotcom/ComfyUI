@@ -9,7 +9,7 @@ from comfy_api.latest._input_impl.video_types import VideoFromFile
 logger = get_bagel_logger("bagel.seedance_node")
 
 # Configure backend URL from environment (default: localhost for self-hosted)
-BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088")
+BAGEL_BACKEND_URL = os.getenv("BAGEL_BACKEND_URL", "http://localhost:8088").rstrip("/")
 
 # Dual-mode API Key support:
 # 1. Multi-user (Bagel-hosted): API keys injected via X-Bagel-Api-Key header
