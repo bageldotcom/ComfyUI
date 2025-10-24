@@ -236,7 +236,7 @@ class ModelDownloadManager:
             download.error_message = str(e)
             download.completed_at = datetime.utcnow().isoformat()
 
-            logger.error(f"[Model Download] Failed: {download.filename} - {e}")
+            logger.error(f"[Model Download] Failed: {download.filename} - {e}", exc_info=True)
             await self.send_progress_update(download)
 
             # Clean up temp file
