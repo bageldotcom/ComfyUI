@@ -101,7 +101,7 @@ class BagelVideoNode:
                     "modelscope-text-to-video"
                 ], {"default": "kling-video/v2/master/text-to-video"}),
                 "prompt": ("STRING", {"multiline": True, "default": "a cinematic shot of waves crashing on a beach"}),
-                "duration": ([5, 6, 7, 8, 10], {"default": 5}),
+                "duration": ([5, 10], {"default": 5}),
                 "aspect_ratio": (["16:9", "9:16", "1:1"], {"default": "16:9"}),
                 "fps": ("INT", {"default": 24, "min": 1, "max": 60}),
                 "seed": ("INT", {"default": -1, "min": -1, "max": 2**32 - 1}),
