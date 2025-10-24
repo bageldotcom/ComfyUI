@@ -81,7 +81,7 @@ class BagelImageNode:
                 "width": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
                 "height": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
                 "num_inference_steps": ("INT", {"default": 28, "min": 1, "max": 100}),
-                "guidance_scale": ("FLOAT", {"default": 3.5, "min": 1.0, "max": 20.0, "step": 0.5}),
+                "guidance_scale": ("FLOAT", {"default": 3.5, "min": 1.0, "max": 10.0, "step": 0.5}),
                 "seed": ("INT", {"default": -1, "min": -1, "max": 2**32 - 1}),
                 "user_id": ("STRING", {"default": "system"})
             },

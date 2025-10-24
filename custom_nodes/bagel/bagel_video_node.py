@@ -70,9 +70,6 @@ class BagelVideoNode:
                     # Pika models
                     "pika/v2.2/text-to-video",
                     "pika/v2.1/text-to-video",
-                    # Veo models
-                    "veo-ai/v2",
-                    "veo-ai/v1/video-diffusion/text-to-video",
                     # Janus models
                     "janus/pro/text-to-video",
                     "janus-pro-video/v1-text-to-video",
@@ -104,8 +101,8 @@ class BagelVideoNode:
                     "modelscope-text-to-video"
                 ], {"default": "kling-video/v2/master/text-to-video"}),
                 "prompt": ("STRING", {"multiline": True, "default": "a cinematic shot of waves crashing on a beach"}),
-                "duration": ("INT", {"default": 5, "min": 1, "max": 10}),
-                "aspect_ratio": (["16:9", "9:16", "1:1", "4:3", "3:4"], {"default": "16:9"}),
+                "duration": ([5, 6, 7, 8, 10], {"default": 5}),
+                "aspect_ratio": (["16:9", "9:16", "1:1"], {"default": "16:9"}),
                 "fps": ("INT", {"default": 24, "min": 1, "max": 60}),
                 "seed": ("INT", {"default": -1, "min": -1, "max": 2**32 - 1}),
                 "user_id": ("STRING", {"default": "system"})
